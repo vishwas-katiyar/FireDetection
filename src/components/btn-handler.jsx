@@ -86,6 +86,7 @@ const ButtonHandler = ({ imageRef, cameraRef, videoRef }) => {
 
       {/* Webcam Handler */}
       <Button
+      color="gray"
         onClick={() => {
           // if not streaming
           if (streaming === null || streaming === "image") {

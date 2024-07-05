@@ -8,7 +8,13 @@ import labels from "./labels.json";
  * @param {Array} classes_data class array
  * @param {Array[Number]} ratios boxes ratio [xRatio, yRatio]
  */
-export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ratios) => {
+export const renderBoxes = (
+  canvasRef,
+  boxes_data,
+  scores_data,
+  classes_data,
+  ratios
+) => {
   const ctx = canvasRef.getContext("2d");
   ctx.clearRect(0, 0, ctx.canvas.width, ctx.canvas.height); // clean canvas
 
@@ -22,11 +28,16 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
   ctx.font = font;
   ctx.textBaseline = "top";
 
+  stopFireAlarm();
   for (let i = 0; i < scores_data.length; ++i) {
     // filter based on class threshold
     const klass = labels[classes_data[i]];
     const color = colors.get(classes_data[i]);
     const score = (scores_data[i] * 100).toFixed(1);
+
+    if (klass === "fire") {
+      playFireAlarm();
+    }
 
     let [y1, x1, y2, x2] = boxes_data.slice(i * 4, (i + 1) * 4);
     x1 *= ratios[0];
@@ -42,7 +53,10 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
 
     // draw border box.
     ctx.strokeStyle = color;
-    ctx.lineWidth = Math.max(Math.min(ctx.canvas.width, ctx.canvas.height) / 200, 2.5);
+    ctx.lineWidth = Math.max(
+      Math.min(ctx.canvas.width, ctx.canvas.height) / 200,
+      2.5
+    );
     ctx.strokeRect(x1, y1, width, height);
 
     // Draw the label background.
@@ -62,7 +76,20 @@ export const renderBoxes = (canvasRef, boxes_data, scores_data, classes_data, ra
     ctx.fillText(klass + " - " + score + "%", x1 - 1, yText < 0 ? 0 : yText);
   }
 };
+const playFireAlarm = () => {
+  const alarm = document.getElementById("fireAlarm");
+  if (alarm.paused) {
+    alarm.play();
+  }
+};
 
+const stopFireAlarm = () => {
+  const alarm = document.getElementById("fireAlarm");
+  if (!alarm.paused) {
+    alarm.pause();
+    alarm.currentTime = 0; // Reset the audio to start
+  }
+};
 class Colors {
   // ultralytics color palette https://ultralytics.com/
   constructor() {
@@ -96,9 +123,11 @@ class Colors {
   static hexToRgba = (hex, alpha) => {
     var result = /^#?([a-f\d]{2})([a-f\d]{2})([a-f\d]{2})$/i.exec(hex);
     return result
-      ? `rgba(${[parseInt(result[1], 16), parseInt(result[2], 16), parseInt(result[3], 16)].join(
-          ", "
-        )}, ${alpha})`
+      ? `rgba(${[
+          parseInt(result[1], 16),
+          parseInt(result[2], 16),
+          parseInt(result[3], 16),
+        ].join(", ")}, ${alpha})`
       : null;
   };
 }
