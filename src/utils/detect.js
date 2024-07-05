@@ -45,7 +45,14 @@ const preprocess = (source, modelWidth, modelHeight) => {
  * @param {HTMLCanvasElement} canvasRef canvas reference
  * @param {VoidFunction} callback function to run after detection process
  */
-export const detect = async (source, model, canvasRef,iouThreshold, scoreThreshold, callback = () => {}) => {
+export const detect = async (
+  source,
+  model,
+  canvasRef,
+  iouThreshold,
+  scoreThreshold,
+  callback = () => {}
+) => {
   const [modelWidth, modelHeight] = model.inputShape.slice(1, 3); // get model width and height
 
   tf.engine().startScope(); // start scoping tf engine
@@ -77,13 +84,22 @@ export const detect = async (source, model, canvasRef,iouThreshold, scoreThresho
     return [rawScores.max(1), rawScores.argMax(1)];
   }); // get max scores and classes index
 
-  const nms = await tf.image.nonMaxSuppressionAsync(boxes, scores, 640, iouThreshold, scoreThreshold); // NMS to filter boxes
+  const nms = await tf.image.nonMaxSuppressionAsync(
+    boxes,
+    scores,
+    640,
+    parseFloat(localStorage.getItem("iouThreshold")) ?? 0.5,
+    parseFloat(localStorage.getItem("scoreThreshold"))?? 0.5
+  ); // NMS to filter boxes
 
   const boxes_data = boxes.gather(nms, 0).dataSync(); // indexing boxes by nms index
   const scores_data = scores.gather(nms, 0).dataSync(); // indexing scores by nms index
   const classes_data = classes.gather(nms, 0).dataSync(); // indexing classes by nms index
 
-  renderBoxes(canvasRef, boxes_data, scores_data, classes_data, [xRatio, yRatio]); // render boxes
+  renderBoxes(canvasRef, boxes_data, scores_data, classes_data, [
+    xRatio,
+    yRatio,
+  ]); // render boxes
   tf.dispose([res, transRes, boxes, scores, classes, nms]); // clear memory
 
   callback();
@@ -97,7 +113,13 @@ export const detect = async (source, model, canvasRef,iouThreshold, scoreThresho
  * @param {tf.GraphModel} model loaded YOLOv8 tensorflow.js model
  * @param {HTMLCanvasElement} canvasRef canvas reference
  */
-export const detectVideo = (vidSource, model, canvasRef,iouThreshold, scoreThreshold) => {
+export const detectVideo = (
+  vidSource,
+  model,
+  canvasRef,
+  iouThreshold,
+  scoreThreshold
+) => {
   /**
    * Function to detect every frame from video
    */
@@ -108,7 +130,7 @@ export const detectVideo = (vidSource, model, canvasRef,iouThreshold, scoreThres
       return; // handle if source is closed
     }
 
-    detect(vidSource, model, canvasRef,iouThreshold, scoreThreshold, () => {
+    detect(vidSource, model, canvasRef, iouThreshold, scoreThreshold, () => {
       requestAnimationFrame(detectFrame); // get another frame
     });
   };

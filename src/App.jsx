@@ -79,7 +79,8 @@ const App = () => {
             📷 YOLOv8 Live Detection App
           </Typography>
           <Typography className="mt-4 text-gray-700">
-            YOLOv8 live detection application on browser powered by <code>tensorflow.js</code>
+            YOLOv8 live detection application on browser powered by{" "}
+            <code>tensorflow.js</code>
           </Typography>
           <Typography className="mt-2 text-gray-700">
             Serving: <code className="code">{selectedModel}</code>
@@ -107,8 +108,11 @@ const App = () => {
               min={0}
               size="md"
               max={1}
-              step={0.1}
-              onChange={(value) => setIouThreshold(value.target.value)}
+              step={0.001}
+              onChange={(value) => {
+                setIouThreshold(value.target.value);
+                localStorage.setItem("iouThreshold", value.target.value);
+              }}
             />
           </div>
           <div className="mt-4">
@@ -119,8 +123,11 @@ const App = () => {
               value={scoreThreshold}
               min={0}
               max={1}
-              step={0.1}
-              onChange={(value) => setScoreThreshold(value.target.value)}
+              step={0.001}
+              onChange={(value) => {
+                setScoreThreshold(value.target.value);
+                localStorage.setItem("scoreThreshold", value.target.value);
+              }}
             />
           </div>
         </CardBody>
@@ -131,21 +138,31 @@ const App = () => {
           src="#"
           ref={imageRef}
           className="mt-4 rounded-lg shadow-md"
-          onLoad={() => detect(imageRef.current, model, canvasRef.current, iouThreshold, scoreThreshold)}
+          onLoad={() =>
+            detect(
+              imageRef.current,
+              model,
+              canvasRef.current,
+              iouThreshold,
+              scoreThreshold
+            )
+          }
         />
         <video
           autoPlay
           muted
           ref={cameraRef}
           className="mt-4 rounded-lg shadow-md"
-          onPlay={() => detectVideo(cameraRef.current, model, canvasRef.current, iouThreshold, scoreThreshold)}
+          onPlay={() =>
+            detectVideo(cameraRef.current, model, canvasRef.current)
+          }
         />
         <video
           autoPlay
           muted
           ref={videoRef}
           className="mt-4 rounded-lg shadow-md"
-          onPlay={() => detectVideo(videoRef.current, model, canvasRef.current, iouThreshold, scoreThreshold)}
+          onPlay={() => detectVideo(videoRef.current, model, canvasRef.current)}
         />
         <canvas
           width={model.inputShape[1]}
@@ -155,7 +172,11 @@ const App = () => {
         />
       </div>
 
-      <ButtonHandler imageRef={imageRef} cameraRef={cameraRef} videoRef={videoRef} />
+      <ButtonHandler
+        imageRef={imageRef}
+        cameraRef={cameraRef}
+        videoRef={videoRef}
+      />
     </div>
   );
 };
