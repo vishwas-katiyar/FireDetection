@@ -4,7 +4,6 @@
   position: relative;
   display: flex;
   flex-direction: column;
-  justify-content: center;
   align-items: center;
 }
 
@@ -59,7 +58,6 @@ button {
   text-decoration: none;
   color: white;
   background-color: black;
-  border: 2px solid black;
   margin: 0 5px;
   padding: 5px;
   border-radius: 5px;

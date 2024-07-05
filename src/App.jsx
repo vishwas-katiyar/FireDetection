@@ -10,6 +10,8 @@ import {
   Typography,
   Progress,
   Slider,
+  Drawer,
+  IconButton,
 } from "@material-tailwind/react";
 import Loader from "./components/loader";
 import ButtonHandler from "./components/btn-handler";
@@ -22,6 +24,11 @@ const App = () => {
     net: null,
     inputShape: [1, 0, 0, 3],
   });
+  const [open, setOpen] = React.useState(false);
+
+  const openDrawer = () => setOpen(true);
+  const closeDrawer = () => setOpen(false);
+
   const [selectedModel, setSelectedModel] = useState("fire_n");
   const [iouThreshold, setIouThreshold] = useState(0.5);
   const [scoreThreshold, setScoreThreshold] = useState(0.5);
@@ -60,11 +67,12 @@ const App = () => {
   }, [selectedModel]);
 
   const handleModelChange = (event) => {
+    closeDrawer();
     setSelectedModel(event);
   };
 
   return (
-    <div className="App bg-gray-100 text-gray-900 min-h-screen flex flex-col items-center justify-center">
+    <div className="App bg-gray-200 text-gray-900 min-h-screen py-8">
       {loading.loading && (
         <Loader>
           <Progress value={loading.progress * 100} size="lg" color="blue" />
@@ -73,8 +81,8 @@ const App = () => {
           </Typography>
         </Loader>
       )}
-      <Card className="max-w-4xl w-full mx-6 mt-6 bg-white shadow-lg rounded-lg">
-        <CardBody>
+      <div className="">
+        <div>
           <Typography variant="h2" className="text-gray-900">
             📷 YOLOv8 Live Detection App
           </Typography>
@@ -85,55 +93,96 @@ const App = () => {
           <Typography className="mt-2 text-gray-700">
             Serving: <code className="code">{selectedModel}</code>
           </Typography>
-          <div className="mt-4">
-            <Select
-              label="Select Model"
-              value={selectedModel}
-              onChange={handleModelChange}
-              color="blue"
-              className="bg-gray-100 text-gray-900"
-            >
-              <Option value="fire_n">Fire N (Nano)</Option>
-              <Option value="fire_s">Fire S (Small)</Option>
-              <Option value="fire_m">Fire M (Medium)</Option>
-              <Option value="fire_l">Fire L (Large)</Option>
-            </Select>
-          </div>
-          <div className="mt-4">
-            <Typography className="mb-2 text-gray-700">
-              IOU Threshold: {iouThreshold}
-            </Typography>
-            <Slider
-              value={iouThreshold}
-              min={0}
-              size="md"
-              max={1}
-              step={0.001}
-              onChange={(value) => {
-                setIouThreshold(value.target.value);
-                localStorage.setItem("iouThreshold", value.target.value);
-              }}
-            />
-          </div>
-          <div className="mt-4">
-            <Typography className="mb-2 text-gray-700">
-              Score Threshold: {scoreThreshold}
-            </Typography>
-            <Slider
-              value={scoreThreshold}
-              min={0}
-              max={1}
-              step={0.001}
-              onChange={(value) => {
-                setScoreThreshold(value.target.value);
-                localStorage.setItem("scoreThreshold", value.target.value);
-              }}
-            />
-          </div>
-        </CardBody>
-      </Card>
+        </div>
+        <React.Fragment>
+          <IconButton
+            ripple={false}
+            className="fixed bottom-4 shadow-2xl right-4 rounded-full w-[6rem] h-[6rem] max-w-[4rem] max-h-[4rem] bg-white border border-gray-100"
+            onClick={openDrawer}
+          >
+            <img src="settings.gif" className="max-w-[3rem]" />
+          </IconButton>
 
-      <div className="content mt-6 flex flex-col items-center">
+          <Drawer
+            open={open}
+            onClose={closeDrawer}
+            className="p-4"
+            placement="right"
+          >
+            <div className="mb-6 flex items-center justify-between">
+              <Typography variant="h5" color="blue-gray">
+                Material Tailwind
+              </Typography>
+              <IconButton
+                variant="text"
+                color="blue-gray"
+                onClick={closeDrawer}
+              >
+                <svg
+                  xmlns="http://www.w3.org/2000/svg"
+                  fill="none"
+                  viewBox="0 0 24 24"
+                  strokeWidth={2}
+                  stroke="currentColor"
+                  className="h-5 w-5"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    d="M6 18L18 6M6 6l12 12"
+                  />
+                </svg>
+              </IconButton>
+            </div>
+            <div className="mt-4">
+              <Select
+                label="Select Model"
+                value={selectedModel}
+                onChange={handleModelChange}
+                color="blue"
+                className="bg-gray-100 text-gray-900"
+              >
+                <Option value="fire_n">Fire N (Nano)</Option>
+                <Option value="fire_s">Fire S (Small)</Option>
+                <Option value="fire_m">Fire M (Medium)</Option>
+                <Option value="fire_l">Fire L (Large)</Option>
+              </Select>
+            </div>
+            <div className="mt-4">
+              <Typography className="mb-2 text-gray-700">
+                IOU Threshold: {iouThreshold}
+              </Typography>
+              <Slider
+                value={iouThreshold}
+                min={0}
+                size="md"
+                max={1}
+                step={0.001}
+                onChange={(value) => {
+                  setIouThreshold(value.target.value);
+                  localStorage.setItem("iouThreshold", value.target.value);
+                }}
+              />
+            </div>
+            <div className="mt-4">
+              <Typography className="mb-2 text-gray-700">
+                Score Threshold: {scoreThreshold}
+              </Typography>
+              <Slider
+                value={scoreThreshold}
+                min={0}
+                max={1}
+                step={0.001}
+                onChange={(value) => {
+                  setScoreThreshold(value.target.value);
+                  localStorage.setItem("scoreThreshold", value.target.value);
+                }}
+              />
+            </div>
+          </Drawer>
+        </React.Fragment>
+      </div>
+      <div className="content flex flex-col items-center">
         <img
           src="#"
           ref={imageRef}
@@ -168,15 +217,14 @@ const App = () => {
           width={model.inputShape[1]}
           height={model.inputShape[2]}
           ref={canvasRef}
-          className="mt-4 rounded-lg shadow-md"
+          className="rounded-lg shadow-md"
         />
       </div>
-
-      <ButtonHandler
-        imageRef={imageRef}
-        cameraRef={cameraRef}
-        videoRef={videoRef}
-      />
+        <ButtonHandler
+          imageRef={imageRef}
+          cameraRef={cameraRef}
+          videoRef={videoRef}
+        />
     </div>
   );
 };

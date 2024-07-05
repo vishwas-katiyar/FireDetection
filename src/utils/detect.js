@@ -49,8 +49,6 @@ export const detect = async (
   source,
   model,
   canvasRef,
-  iouThreshold,
-  scoreThreshold,
   callback = () => {}
 ) => {
   const [modelWidth, modelHeight] = model.inputShape.slice(1, 3); // get model width and height
@@ -130,7 +128,7 @@ export const detectVideo = (
       return; // handle if source is closed
     }
 
-    detect(vidSource, model, canvasRef, iouThreshold, scoreThreshold, () => {
+    detect(vidSource, model, canvasRef, () => {
       requestAnimationFrame(detectFrame); // get another frame
     });
   };
