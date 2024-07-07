@@ -1,6 +1,6 @@
 import React from "react";
 import { Button, Typography } from "@material-tailwind/react";
-import FeatureSection from "./Featuresection";
+import FeatureSection from "./FeatureSection";
 
 function HeroSection() {
   return (
