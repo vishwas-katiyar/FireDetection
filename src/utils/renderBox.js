@@ -35,7 +35,12 @@ export const renderBoxes = (
     const color = colors.get(classes_data[i]);
     const score = (scores_data[i] * 100).toFixed(1);
 
-    if (klass === "fire") {
+    if (klass === "fire" && localStorage.getItem("fireAlert") == "true") {
+      playFireAlarm();
+    } else if (
+      klass === "smoke" &&
+      localStorage.getItem("smokeAlert") == "true"
+    ) {
       playFireAlarm();
     }
 

@@ -1,6 +1,5 @@
 .App {
   height: 100%;
-  padding: 0 10px;
   position: relative;
   display: flex;
   flex-direction: column;
@@ -54,12 +53,4 @@
   height: 100%;
 }
 
-button {
-  text-decoration: none;
-  color: white;
-  background-color: black;
-  margin: 0 5px;
-  padding: 5px;
-  border-radius: 5px;
-  cursor: pointer;
-}
+

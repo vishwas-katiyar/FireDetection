@@ -2,9 +2,6 @@ import React, { useState, useEffect, useRef } from "react";
 import * as tf from "@tensorflow/tfjs";
 import "@tensorflow/tfjs-backend-webgl";
 import {
-  Button,
-  Card,
-  CardBody,
   Select,
   Option,
   Typography,
@@ -12,26 +9,40 @@ import {
   Slider,
   Drawer,
   IconButton,
+  Checkbox,
+  Card,
 } from "@material-tailwind/react";
 import Loader from "./components/loader";
 import ButtonHandler from "./components/btn-handler";
 import { detect, detectVideo } from "./utils/detect";
 import "./style/App.css";
+import ConfigSummary from "./components/ConfigSummary";
+import DemoPage from "./components/demo";
 
 const App = () => {
   const [loading, setLoading] = useState({ loading: true, progress: 0 });
+  const [flag, setFlag] = useState(localStorage.getItem("demo"));
   const [model, setModel] = useState({
     net: null,
     inputShape: [1, 0, 0, 3],
   });
-  const [open, setOpen] = React.useState(false);
-
-  const openDrawer = () => setOpen(true);
-  const closeDrawer = () => setOpen(false);
-
+  const [open, setOpen] = useState(false);
   const [selectedModel, setSelectedModel] = useState("fire_n");
-  const [iouThreshold, setIouThreshold] = useState(0.5);
-  const [scoreThreshold, setScoreThreshold] = useState(0.5);
+
+  const [iouThreshold, setIouThreshold] = useState(() => {
+    const storedValue = localStorage.getItem("iouThreshold");
+    const initialValue = parseInt(storedValue);
+    return isNaN(initialValue) ? 50 : initialValue;
+  });
+
+  const [scoreThreshold, setScoreThreshold] = useState(() => {
+    const storedValue = localStorage.getItem("scoreThreshold");
+    const initialValue = parseInt(storedValue);
+    return isNaN(initialValue) ? 50 : initialValue;
+  });
+
+  const [smokeAlert, setSmokeAlert] = useState(true);
+  const [fireAlert, setFireAlert] = useState(true);
 
   const imageRef = useRef(null);
   const cameraRef = useRef(null);
@@ -39,6 +50,13 @@ const App = () => {
   const canvasRef = useRef(null);
 
   useEffect(() => {
+    // Load saved values from localStorage
+    const savedSmokeAlert = localStorage.getItem("smokeAlert") === "true";
+    const savedFireAlert = localStorage.getItem("fireAlert") === "true";
+
+    setSmokeAlert(savedSmokeAlert);
+    setFireAlert(savedFireAlert);
+
     const loadModel = async () => {
       setLoading({ loading: true, progress: 0 });
 
@@ -66,41 +84,49 @@ const App = () => {
     tf.ready().then(loadModel);
   }, [selectedModel]);
 
+  useEffect(() => {
+    localStorage.setItem("smokeAlert", smokeAlert.toString());
+    localStorage.setItem("fireAlert", fireAlert.toString());
+    localStorage.setItem("scoreThreshold", scoreThreshold.toString());
+    localStorage.setItem("iouThreshold", iouThreshold.toString());
+  }, [smokeAlert, fireAlert,scoreThreshold,iouThreshold]);
+
   const handleModelChange = (event) => {
     closeDrawer();
     setSelectedModel(event);
   };
 
+  const openDrawer = () => setOpen(true);
+  const closeDrawer = () => setOpen(false);
   return (
-    <div className="App bg-gray-200 text-gray-900 min-h-screen py-8">
+    <div className="App bg-gray-200 text-gray-900 min-h-screen min-w-full">
       {loading.loading && (
         <Loader>
-          <Progress value={loading.progress * 100} size="lg" color="blue" />
+          <Progress value={loading.progress * 100} size="lg" color="gray" />
           <Typography variant="lead" className="mt-2">
             Loading model... {(loading.progress * 100).toFixed(2)}%
           </Typography>
         </Loader>
       )}
-      <div className="">
-        <div>
-          <Typography variant="h2" className="text-gray-900">
-            📷 YOLOv8 Live Detection App
-          </Typography>
-          <Typography className="mt-4 text-gray-700">
-            YOLOv8 live detection application on browser powered by{" "}
-            <code>tensorflow.js</code>
-          </Typography>
-          <Typography className="mt-2 text-gray-700">
-            Serving: <code className="code">{selectedModel}</code>
-          </Typography>
-        </div>
+      <div className="pt-[6rem] w-[95%]">
+        <ConfigSummary
+          iouThreshold={iouThreshold}
+          selectedModel={selectedModel}
+          scoreThreshold={scoreThreshold}
+          fireAlert={fireAlert}
+          smokeAlert={smokeAlert}
+          setFireAlert={setFireAlert}
+          setSmokeAlert={setSmokeAlert}
+          openDrawer={openDrawer}
+        />
+
         <React.Fragment>
           <IconButton
             ripple={false}
             className="fixed bottom-4 shadow-2xl right-4 rounded-full w-[6rem] h-[6rem] max-w-[4rem] max-h-[4rem] bg-white border border-gray-100"
             onClick={openDrawer}
           >
-            <img src="settings.gif" className="max-w-[3rem]" />
+            <img src="settings.gif" className="max-w-[3rem]" alt="Settings" />
           </IconButton>
 
           <Drawer
@@ -150,13 +176,10 @@ const App = () => {
             </div>
             <div className="mt-4">
               <Typography className="mb-2 text-gray-700">
-                IOU Threshold: {iouThreshold}
+                IOU Threshold: {iouThreshold} %
               </Typography>
               <Slider
-                value={iouThreshold}
-                min={0}
-                size="md"
-                max={1}
+                defaultValue={iouThreshold}
                 step={0.001}
                 onChange={(value) => {
                   setIouThreshold(value.target.value);
@@ -166,12 +189,10 @@ const App = () => {
             </div>
             <div className="mt-4">
               <Typography className="mb-2 text-gray-700">
-                Score Threshold: {scoreThreshold}
+                Score Threshold: {scoreThreshold} %
               </Typography>
               <Slider
-                value={scoreThreshold}
-                min={0}
-                max={1}
+                defaultValue={scoreThreshold}
                 step={0.001}
                 onChange={(value) => {
                   setScoreThreshold(value.target.value);
@@ -179,52 +200,80 @@ const App = () => {
                 }}
               />
             </div>
+            <div className="flex items-center mt-4">
+              <Checkbox
+                checked={smokeAlert}
+                onChange={(e) => setSmokeAlert(e.target.checked)}
+                color="gray"
+              />
+              <Typography className="text-gray-700">Smoke Alert</Typography>
+            </div>
+            <div className="flex items-center mt-2">
+              <Checkbox
+                checked={fireAlert}
+                onChange={(e) => setFireAlert(e.target.checked)}
+                color="gray"
+              />
+              <Typography className="text-gray-700">Fire Alert</Typography>
+            </div>
           </Drawer>
         </React.Fragment>
+        {!flag && <DemoPage />}
       </div>
-      <div className="content flex flex-col items-center">
-        <img
-          src="#"
-          ref={imageRef}
-          className="mt-4 rounded-lg shadow-md"
-          onLoad={() =>
-            detect(
-              imageRef.current,
-              model,
-              canvasRef.current,
-              iouThreshold,
-              scoreThreshold
-            )
-          }
-        />
-        <video
-          autoPlay
-          muted
-          ref={cameraRef}
-          className="mt-4 rounded-lg shadow-md"
-          onPlay={() =>
-            detectVideo(cameraRef.current, model, canvasRef.current)
-          }
-        />
-        <video
-          autoPlay
-          muted
-          ref={videoRef}
-          className="mt-4 rounded-lg shadow-md"
-          onPlay={() => detectVideo(videoRef.current, model, canvasRef.current)}
-        />
-        <canvas
-          width={model.inputShape[1]}
-          height={model.inputShape[2]}
-          ref={canvasRef}
-          className="rounded-lg shadow-md"
-        />
+      <div className="mt-4">
+        <div className="content flex flex-col items-center">
+          <img
+            src="#"
+            ref={imageRef}
+            className=" rounded-lg shadow-md"
+            onLoad={() =>
+              detect(
+                imageRef.current,
+                model,
+                canvasRef.current,
+                iouThreshold,
+                scoreThreshold
+              )
+            }
+            alt="Image for detection"
+          />
+          <video
+            autoPlay
+            muted
+            ref={cameraRef}
+            className=" rounded-lg shadow-md"
+            onPlay={() =>
+              detectVideo(cameraRef.current, model, canvasRef.current)
+            }
+            alt="Camera feed for detection"
+          />
+          <video
+            autoPlay
+            muted
+            ref={videoRef}
+            className=" rounded-lg shadow-md"
+            onPlay={() =>
+              detectVideo(videoRef.current, model, canvasRef.current)
+            }
+            alt="Video feed for detection"
+          />
+          {flag && (
+            <canvas
+              width={model.inputShape[1]}
+              height={model.inputShape[2]}
+              ref={canvasRef}
+              className="rounded-lg shadow-md h-[18rem]"
+              alt="Canvas for output"
+            />
+          )}
+        </div>
       </div>
-        <ButtonHandler
-          imageRef={imageRef}
-          cameraRef={cameraRef}
-          videoRef={videoRef}
-        />
+      <ButtonHandler
+        imageRef={imageRef}
+        cameraRef={cameraRef}
+        videoRef={videoRef}
+        setFlag={setFlag}
+      />
     </div>
   );
 };

@@ -26,6 +26,7 @@
   },
   "homepage": "https://github.com/Hyuto/yolov8-tfjs#readme",
   "dependencies": {
+    "@heroicons/react": "^2.1.4",
     "@material-tailwind/react": "^2.1.9",
     "@tensorflow/tfjs": "^4.1.0",
     "normalize.css": "^8.0.1",

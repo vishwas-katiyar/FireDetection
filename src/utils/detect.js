@@ -45,12 +45,7 @@ const preprocess = (source, modelWidth, modelHeight) => {
  * @param {HTMLCanvasElement} canvasRef canvas reference
  * @param {VoidFunction} callback function to run after detection process
  */
-export const detect = async (
-  source,
-  model,
-  canvasRef,
-  callback = () => {}
-) => {
+export const detect = async (source, model, canvasRef, callback = () => {}) => {
   const [modelWidth, modelHeight] = model.inputShape.slice(1, 3); // get model width and height
 
   tf.engine().startScope(); // start scoping tf engine
@@ -81,13 +76,15 @@ export const detect = async (
     const rawScores = transRes.slice([0, 0, 4], [-1, -1, numClass]).squeeze(0); // #6 only squeeze axis 0 to handle only 1 class models
     return [rawScores.max(1), rawScores.argMax(1)];
   }); // get max scores and classes index
-
+  const iou = parseFloat(localStorage.getItem("iouThreshold")) / 100 ?? 0.5;
+  const score = parseFloat(localStorage.getItem("scoreThreshold")) / 100 ?? 0.5;
+  console.log(iou, score);
   const nms = await tf.image.nonMaxSuppressionAsync(
     boxes,
     scores,
     640,
-    parseFloat(localStorage.getItem("iouThreshold")) ?? 0.5,
-    parseFloat(localStorage.getItem("scoreThreshold"))?? 0.5
+    iou,
+    score
   ); // NMS to filter boxes
 
   const boxes_data = boxes.gather(nms, 0).dataSync(); // indexing boxes by nms index
@@ -111,13 +108,7 @@ export const detect = async (
  * @param {tf.GraphModel} model loaded YOLOv8 tensorflow.js model
  * @param {HTMLCanvasElement} canvasRef canvas reference
  */
-export const detectVideo = (
-  vidSource,
-  model,
-  canvasRef,
-  iouThreshold,
-  scoreThreshold
-) => {
+export const detectVideo = (vidSource, model, canvasRef) => {
   /**
    * Function to detect every frame from video
    */
